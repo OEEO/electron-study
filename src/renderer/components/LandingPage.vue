@@ -4,18 +4,48 @@
     <div class="content">
       {{ fileContent }}
     </div>
+
+    <h1>To Do List</h1>
+    <div>
+      <el-input type="text" v-model="inputText" @keyup.native="inputKeyUp"/>
+      <el-button type="success" @click.native="addToDoList">添加</el-button>
+    </div>
+
+    <div>
+      <h2>待办事项</h2>
+      <ul>
+        <li v-for="(item, key) in toDoList" :key="key" v-if="!item.finish">
+          {{ item.title }}
+          <el-checkbox v-model="item.finish"></el-checkbox>
+        </li>
+      </ul>
+
+      <br/><br/><br/><hr/><br/><br/><br/>
+      <h2>完成</h2>
+      <ul>
+        <li v-for="(item, key) in toDoList" :key="key" v-if="item.finish">
+          {{ item.title }}
+          <el-checkbox v-model="item.finish"></el-checkbox>
+        </li>
+      </ul>
+    </div>
+
   </div>
 </template>
 
 <script>
   import SystemInformation from './LandingPage/SystemInformation'
+  import storage from '../../utils/storage'
   const fs = require('fs')
+
   export default {
     name: 'landing-page',
     components: { SystemInformation },
     data () {
       return {
-        fileContent: ''
+        fileContent: '',
+        toDoList: [],
+        inputText: ''
       }
     },
     methods: {
@@ -26,7 +56,34 @@
         this.filePath = this.$refs.inputFile.$refs.input.files[0].path
         console.log('input', this.filePath)
         this.fileContent = fs.readFileSync(this.filePath, 'utf-8')
+      },
+      inputKeyUp (e) {
+        console.log('inputKeyUp', e)
+        if (e.keyCode === 13) {
+          this.addToDoList()
+        }
+      },
+      addToDoList () {
+        if (!this.inputText) {
+          this.$alert('待办事项不能为空', '提醒', {
+            confirmButtonText: 'OK'
+          })
+          return
+        }
+        let toDoItem = {
+          title: this.inputText,
+          finish: false
+        }
+        this.inputText = ''
+        this.toDoList.push(toDoItem)
       }
+    },
+    updated () {
+      storage.set('toDoList', this.toDoList)
+    },
+    created () {
+      this.toDoList = storage.get('toDoList') || []
+      console.log('created', this.toDoList)
     }
   }
 </script>
